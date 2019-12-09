@@ -1,0 +1,262 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="1504.83">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; line-height: 14.0px; font: 12.0px Times; color: #000000; -webkit-text-stroke: #000000}
+    p.p2 {margin: 0.0px 0.0px 12.0px 0.0px; line-height: 14.0px; font: 12.0px Times; color: #000000; -webkit-text-stroke: #000000}
+    span.s1 {font-kerning: none}
+  </style>
+  <link rel="stylesheet" href="../main.css">
+  <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+  <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+</head>
+<body>
+<html>
+    <head>
+        <style>
+            #canvas{
+                backgrowund #FFF;
+                border.1px solid black;
+
+                background: #fff;
+                box-shadow: 0 0 2px rgba(0, 0, 0, 0.06);
+                color: #545454;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-size: 16px;
+                line-height: 1.5;
+                margin: 0 auto;
+                max-width: 1024px;
+                padding: 2em 2em 4em;
+            }
+
+            #text-button {
+            display: block;
+            cursor: pointer;
+            width: 160px;
+            text-align: center;
+            border: 1px solid #232323;
+            }
+            
+            
+        </style>
+        
+    </head>
+    <body align="center">
+        <h1>Reaction Diffusion System</h1>
+        <hr>
+        <button type="button" id="start">start</button>
+        <button type="button" id="pause" disabled>pause</button>
+        <button type="button" id="step">step</button>
+        &nbsp;&nbsp;
+        <button type="button" id="clear">clear</button>
+        <button type="button" id="reset">reset</button>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        speed:<input type="text" id="timer" value="1">
+        <br>
+        feed:<input type="text" id="feed" value="0.04">
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        kill:<input type="text" id="kill" value="0.06">
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        threshold:<input type="text" id="threshold" value="48">
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <select id="pattern">
+                <option>amorphous</option>
+                <option>stripe</option>
+                <option>spot</option>
+                <option>floating bubbles</option>
+                <option>wave1</option>
+                <option>solitons</option>
+                <option>palsating solitons</option>
+                <option>worms</option>
+                <option>maze</option>
+                <option>hole</option>
+                <option>chaos</option>
+                <option>chaos and hole</option>
+                <option>moving spot</option>
+                <option>spot and loop</option>
+                <option>wave 2</option>
+                <option>U-skate</option>
+                <option>4-worms</option>
+        </select>
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <select id="boundary">
+                <option>fixed boundary</option>
+                <option>periodic boundary</option>
+        </select>
+        <!--
+        <br>
+        <table border="1">
+        <tr>
+        <td>feed</td>
+        <td>
+        <input type="range" value="0.001" min="0" max="0.100" step="0.001"
+        oninput="document.getElementById('output1').value=this.value">
+        </td>
+        <td>
+        <output id="feedSlider">0.001</output>
+        </td></tr>
+        <tr>
+        <td>kill</td>
+        <td>
+        <input type="range" value="1" min="0" max="0.1" step="0.001"
+        oninput="document.getElementById('output2').value=this.value">
+        </td>
+        <td>
+        <output id="killSlider">0.001</output>
+        </td></tr>
+        </table>
+        <br>
+        -->
+              
+        <hr>
+        <canvas id="rds" width="512" height="512"></canvas>
+        <script src="rds_mono.js"></script>
+        <br>
+        <hr>
+        
+        <script>
+            clearInterval(timer);
+
+            document.getElementById("start").onclick=function(){
+                timer=setInterval(draw,parseInt(document.getElementById("timer").value));
+                document.getElementById("start").disabled=true;
+                document.getElementById("pause").disabled=false;
+
+            }
+            document.getElementById("pause").onclick=function(){
+                clearInterval(timer);
+                document.getElementById("pause").disabled=true;
+                document.getElementById("start").disabled=false;
+            }
+            document.getElementById("step").onclick=function(){
+                clearInterval(timer);
+                document.getElementById("pause").disabled=true;
+                document.getElementById("start").disabled=false;
+                updateField();
+                drawField();
+            }
+
+            document.getElementById("clear").onclick=function(){
+                clearField();
+                drawField();
+            }
+            document.getElementById("reset").onclick=function(){
+                reset();
+            }
+
+            document.getElementById("feed").onchange=function(){
+                f=parseFloat(document.getElementById("feed").value);
+                //console.log(f);
+            }
+
+            document.getElementById("kill").onchange=function(){
+                k=parseFloat(document.getElementById("kill").value);
+                //console.log(k);
+            }
+
+            document.getElementById("threshold").onchange=function(){
+                threshold=parseFloat(document.getElementById("threshold").value);
+                //console.log(k);
+            }
+
+
+            document.getElementById("pattern").onchange=function(){
+                switch(pattern.selectedIndex){
+                    case 0:
+                    f=0.04;
+                    k=0.06;
+                    break;
+                    case 1:
+                    f=0.022;
+                    k=0.051;
+                    break;
+                    case 2:
+                    f=0.035;
+                    k=0.065;
+                    break;
+                    case 3:
+                    f=0.012;
+                    k=0.05;
+                    break;
+                    case 4:
+                    f=0.025;
+                    k=0.05;
+                    break;
+                    case 5:
+                    f=0.03;
+                    k=0.062;
+                    break;
+                    case 6:
+                    f=0.025;
+                    k=0.06;
+                    break;
+                    case 7:
+                    f=0.078;
+                    k=0.061;
+                    break;
+                    case 8:
+                    f=0.029;
+                    k=0.057;
+                    break;
+                    case 9:
+                    f=0.039;
+                    k=0.058;
+                    break;
+                    case 10:
+                    f=0.026;
+                    k=0.051;
+                    break;
+                    case 11:
+                    f=0.034;
+                    k=0.056;
+                    break;
+                    case 12:
+                    f=0.014;
+                    k=0.054;
+                    break;
+                    case 13:
+                    f=0.018;
+                    k=0.051;
+                    break;
+                    case 14:
+                    f=0.014;
+                    k=0.045;
+                    break;
+                    case 15:
+                    f=0.062;
+                    k=0.061;
+                    break;
+                    case 16:
+                    f=0.05;
+                    k=0.065;
+                    break;
+                    case 16:
+                    f=0.09;
+                    k=0.059;
+                    break;
+                }
+                document.getElementById("feed").value=f;
+                document.getElementById("kill").value=k;
+                drawField();
+            }
+
+            document.getElementById("boundary").onchange=function(){
+                switch(document.getElementById("boundary").selectedIndex){
+                    case 0:
+                    isPeriodicBaundary=false;
+                    break;
+                    case 1:
+                    isPeriodicBaundary=true;
+                    break;
+                }
+                console.log(isPeriodicBaundary);
+            }
+        </script>
+
+    </body>
+</html>
